@@ -39,44 +39,63 @@
         global $CONFIG;
 
         $TASK = [
-            'auth-user' => '',
-            'auth-pass' => '',
+          'task-timestamp' => '',
+          'task-uuid' => '', 
 
-            'task-timestamp' => '',
-            'task-uuid' => '',    
+          'auth-user' => '',
+          'auth-pass' => '',   
     
-            'task-category' => '',
-            'task-description' => '',
+          'task-category' => '',
+          'task-description' => '',
     
-            'task-source' => '',
-            'task-responsable' => '',
+          'task-source' => '',
+          'task-responsable' => '',
     
-            'task-schedule' => '',
+          'task-schedule' => '',
 
-            'task-priority' => '',
+          'task-priority' => '',
 
-            'task-project' => '',
+          'task-project' => '',
 
-            'task-attachments' => [],
-            'task-follows' => [],
+          'task-attachments' => [],
+          'task-follows' => [],
     
-            'task-infos' => [],
-            'task-warnings' => [],
-            'task-errors' => [],
+          'task-infos' => [],
+          'task-warnings' => [],
+          'task-errors' => [],
     
-            'user-name' => '',
-            'user-code' => '',
-            'user-profile' => '',
-            'user-role' => '',
-            'user-phone' => '',
-            'user-email' => '',
-            'user-alternative' => '',
-            'user-authorization' => '',
+          'user-name' => '',
+          'user-code' => '',
+          'user-profile' => '',
+          'user-role' => '',
+          'user-phone' => '',
+          'user-email' => '',
+          'user-alternative' => '',
+          'user-authorization' => '',
     
-            'local-label' => '',
-            'local-unity' => '',
-            'local-departament' => '',
+          'local-label' => '',
+          'local-unity' => '',
+          'local-departament' => '',
         ];
+
+        // Setting 'task-timestamp'...
+
+        $TASK['task-timestamp'] = time();
+
+        // Setting 'task-uuid'...
+
+        if (!empty($_POST['task-uuid'])) {
+            $TASK['task-uuid'] = $_POST['task-uuid'];
+
+            if (file_exists('tasks'.'/'.$TASK['task-uuid'].'/'.$TASK['task-uuid'].'.task.jumintus')) {
+              $TASK['task-errors'][] = 'Parece que houve um conflito com o protocolo do chamado. Tente novamente.';
+              return $TASK;
+            }
+        
+        } else {
+            $TASK['task-errors'][] = 'Impossível determinar o protocolo do chamado. Tente novamente.';
+            return $TASK;
+        }
 
         // Setting 'auth-user'...
 
@@ -130,20 +149,6 @@
 
         if (empty($TASK['user-name']) || empty($TASK['user-role']) || empty($TASK['user-email'])) {
             $TASK['task-errors'][] = 'Usuário e/ou senha inválido. Tente novamente.'; 
-            return $TASK;
-        }
-       
-        // Setting 'task-timestamp'...
-
-        $TASK['task-timestamp'] = time();
-
-        // Setting 'task-uuid'...
-
-        if (!empty($_POST['task-uuid'])) {
-            $TASK['task-uuid'] = $_POST['task-uuid'];
-        
-        } else {
-            $TASK['task-errors'][] = 'Impossível determinar o protocolo do chamado. Tente novamente.';
             return $TASK;
         }
 
@@ -226,8 +231,10 @@
 
         // Setting 'task-attachments'...
 
-        foreach(scandir('uploads/') as $attachment) {
-          if (!in_array($attachment,['.','..']) && substr($attachment,0,17) == (date('Ymd',$TASK['task-timestamp']).'-'.$TASK['task-uuid'])) {
+        $upload = 'tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/';
+
+        foreach(scandir($upload) as $attachment) {
+          if (!in_array($attachment,['.','..'])) {
             $TASK['task-attachments'][] = $attachment;
           }
         }
@@ -301,6 +308,23 @@
     }
 
     $TASK = setup();
+
+    if (empty($TASK['task-errors'])) {
+
+      // TODO
+    
+    } else {
+      $upload = 'tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/';
+
+      foreach(scandir($upload) as $attachment) {
+        if (!in_array($attachment,['.','..'])) {
+          unlink('tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/'.$attachment);
+        }
+      }
+
+      rmdir('tasks'.'/'.$TASK['task-uuid'].'/'.'attachments');
+      rmdir('tasks'.'/'.$TASK['task-uuid']);
+    }
 
     echo '<h1>TASK</h1>';
     echo '<pre>'; 
@@ -511,12 +535,11 @@
                         <dt><i class="fas fa-edit"></i> Descrição:</dt>
                         <dd>"<?= $TASK['task-description'] ?>"</dd>
                         <dt><i class="fas fa-upload"></i> Anexo:</dt>
-                        <?php if (count($TASK['task-attachments'])): ?>
-                          
+                        <?php if (!empty($TASK['task-attachments'])): ?>
                           <dd>
                             <p class="h1">
                             <?php foreach($TASK['task-attachments'] as $attachment): ?>
-                              <span class="py-3"><a href="<?= $CONFIG['jumintus']['url'].'uploads/'.$attachment ?>" target="_blank"><i class="fas fa-file-download"></i></a></span>
+                              <span class="py-5 pr-1"><a href="<?= $CONFIG['jumintus']['url'].'/'.'tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/'.$attachment ?>" target="_blank"><i class="fas fa-file-download"></i></a></span>
                             <?php endforeach; ?>    
                             </p>
                           </dd>

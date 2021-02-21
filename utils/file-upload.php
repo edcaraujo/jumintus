@@ -11,10 +11,10 @@ function upload() {
         return [];
     }
 
-    $upload = '../uploads/';
+    $upload = 'tasks/'.$_POST['UUID'].'/attachments';
 
-    if (!is_dir($upload)) {
-        mkdir($upload);
+    if (!is_dir('../'.$upload)) {
+        mkdir('../'.$upload,0777, true);
     }
 
     $n = count($_FILES[$input]['name']);
@@ -27,7 +27,7 @@ function upload() {
 
         if ($filepath != ""){
         
-            $id = date('Ymd').'-'.$_POST['UUID'].'-'.md5_file($filepath);
+            $id = md5_file($filepath);
             $ext = pathinfo($filename, PATHINFO_EXTENSION);
            
             $type = 'object';
@@ -35,31 +35,29 @@ function upload() {
             if (in_array(strtolower($ext),['pdf']))
                 $type = 'pdf';
 
-            if (in_array(strtolower($ext),['jpg','jpeg','png','gif']))
+            if (in_array(strtolower($ext),['jpg','jpeg']))
                 $type = 'image';
 
             if (in_array(strtolower($ext),['txt','csv','md']))
                 $type = 'text';
 
             $newfilename = $id.'.'.$ext;
-            $newfilepath = $upload.$newfilename;
-
-            $newfileurl = $CONFIG['url'].'uploads/'. $newfilename;
+            $newfilepath = '../'.$upload.'/'.$newfilename;
 
             if(move_uploaded_file($filepath, $newfilepath)) {
                 return [
                     'initialPreview' => [
-                        $newfileurl
+                        $newfilepath
                     ],
 
                     'initialPreviewConfig' => [[
-                        'key' => $newfilename,
+                        'key' => $newfilepath,
                         'caption' => $filename,
                         'size' => $filesize,
                         'type' => $type,
                         'showZoom' => false,
                         'downloadUrl' => false, 
-                        'url' => $CONFIG['url'].'utils/file-delete.php',
+                        'url' => $CONFIG['url'].'/'.'utils/file-delete.php',
                     ]],
 
                     'initialPreviewAsData' => true

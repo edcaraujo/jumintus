@@ -10,7 +10,7 @@
     'title' => 'jumintus',
     'description' => 'Haiô Silver! Sistema de Helpdesk Go Horse (com Asana).',
     'icon' => '<i class="fas fa-horse"></i>',
-    'url' => 'http://localhost/jumintus/',
+    'url' => 'http://localhost/jumintus',
 
     'test' => true,
 
