@@ -14,10 +14,10 @@
   $UUID = dechex(time()-rand(0,10000));
 
   $TASK = array(
-    'auth-user' => '',
+    'user-auth' => '',
 
     'user-profile' => '',
-    'user-contact' => '',
+    'user-phone' => '',
 
     'local-label' => '',
     'local-unity' => '',
@@ -30,14 +30,14 @@
   );
   
 
-  if (isset($_GET['auth-user']))
-    $TASK['auth-user'] = urldecode($_GET['auth-user']);
+  if (isset($_GET['user-auth']))
+    $TASK['user-auth'] = urldecode($_GET['user-auth']);
 
   if (isset($_GET['user-profile']))
     $TASK['user-profile'] = urldecode($_GET['user-profile']);
 
-  if (isset($_GET['user-contact']))
-    $TASK['user-contact'] = urldecode($_GET['user-contact']);
+  if (isset($_GET['user-phone']))
+    $TASK['user-phone'] = urldecode($_GET['user-phone']);
 
   if (isset($_GET['local-label']))
     $TASK['local-label'] = urldecode($_GET['local-label']);
@@ -67,23 +67,23 @@
 
   session_start();
 
-  if (isset($_POST['auth-user']) && isset($_POST['auth-pass'])) {
+  if (isset($_POST['user-auth']) && isset($_POST['user-pass'])) {
     foreach($CONFIG['jumintus']['auth'] as $item) {
-      $data = $CONFIG['auth'][$item](explode('@',$_POST['auth-user'])[0],$_POST['auth-pass']);
+      $data = $CONFIG['auth'][$item](explode('@',$_POST['user-auth'])[0],$_POST['user-pass']);
 
       if ($data) {
-        $_SESSION['auth-user'] = $data['user'];
-        $_SESSION['auth-code'] = $data['code'];
-        $_SESSION['auth-name'] = $data['name'];
-        $_SESSION['auth-profile'] = $data['profile'];
-        $_SESSION['auth-role'] = $data['role'];
-        $_SESSION['auth-phone'] = $data['phone'];
-        $_SESSION['auth-email'] = $data['email'];
-        $_SESSION['auth-alternative'] = $data['alternative'];
+        $_SESSION['user-auth'] = $data['user'];
+        $_SESSION['user-code'] = $data['code'];
+        $_SESSION['user-name'] = $data['name'];
+        $_SESSION['user-profile'] = $data['profile'];
+        $_SESSION['user-role'] = $data['role'];
+        $_SESSION['user-phone'] = $data['phone'];
+        $_SESSION['user-email'] = $data['email'];
+        $_SESSION['user-alternative'] = $data['alternative'];
 
-        $_SESSION['auth-asana'] = $data['asana'];
+        $_SESSION['user-asana'] = $data['asana'];
         
-        $_SESSION['auth-authorization'] = $data['authorization'];
+        $_SESSION['user-authorization'] = $data['authorization'];
 
         break;
       }
@@ -115,13 +115,13 @@
 
       <div class="navbar-collapse collapse">
         <ul class="navbar-nav ml-auto">
-          <?php if (!isset($_SESSION['auth-user'])): ?>
+          <?php if (!isset($_SESSION['user-auth'])): ?>
             <li class="nav-item">
               <a class="btn btn-outline-light" href="index.php" data-toggle="modal" data-target="#moauthuser"><i class="fas fa-sign-in-alt"></i> Login</a>  
             </li>
           <?php else: ?> 
             <li class="nav-item">
-              <span class="nav-link active" href="index.php?do=logout"> <?= $_SESSION['auth-name'] ?> (@<?= $_SESSION['auth-user'] ?>)</span>
+              <span class="nav-link active" href="index.php?do=logout"> <?= $_SESSION['user-name'] ?> (@<?= $_SESSION['user-auth'] ?>)</span>
             </li>
             <li class="nav-item">
               <a class="btn btn-light" href="index.php?do=logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -153,7 +153,7 @@
 
       <?php endif; ?>
 
-      <?php if (isset($_POST['auth-user']) && !isset($_SESSION['auth-user'])): ?>
+      <?php if (isset($_POST['user-auth']) && !isset($_SESSION['user-auth'])): ?>
 
       <div>
         <div class="text-center">
@@ -169,7 +169,7 @@
 
       <form id="task" method="post" action="haiosilver.php">
         
-        <?php if (!isset($_SESSION['auth-user'])): ?>
+        <?php if (!isset($_SESSION['user-auth'])): ?>
 
           <div class="py-3">
             <div>
@@ -178,26 +178,26 @@
 
             <div class="pt-3">
               <div class="form-group">
-                <label for="inauthuser"><i class="fas fa-id-card"></i> Usuário</label>
-                <input type="text" class="form-control form-control-lg" id="inauthuser" name="auth-user" aria-describedby="inauthuserdetails" placeholder="Digite seu usuário ou e-mail. Por exemplo: 'joao' ou 'joao@exemplo.com'." maxlength="45" value="<?= $TASK['auth-user'] ?>">
+                <label for="inuserauth"><i class="fas fa-id-card"></i> Usuário</label>
+                <input type="text" class="form-control form-control-lg" id="inuserauth" name="user-auth" aria-describedby="inuserauthdetails" placeholder="Digite seu usuário ou e-mail. Por exemplo: 'joao' ou 'joao@exemplo.com'." maxlength="45" value="<?= $TASK['user-auth'] ?>">
                 <div class="invalid-feedback">Por favor, digite seu usuário válido.</div>
 
-                <small id="inauthuserdetails" class="form-text text-muted">O usuário será utilizado para identificação do colaborador na abertura do chamado.</small>
+                <small id="inuserauthdetails" class="form-text text-muted">O usuário será utilizado para identificação do colaborador na abertura do chamado.</small>
               </div>
           
               <div class="form-group">
-                <label for="inauthpass"><i class="fas fa-key"></i> Senha</label>
-                <input type="password" class="form-control form-control-lg" id="inauthpass" name="auth-pass" aria-describedby="inauthpassdetails" placeholder="Digite sua senha..." maxlength="15">
+                <label for="inuserpass"><i class="fas fa-key"></i> Senha</label>
+                <input type="password" class="form-control form-control-lg" id="inuserpass" name="user-pass" aria-describedby="inuserpassdetails" placeholder="Digite sua senha..." maxlength="15">
                 <div class="invalid-feedback">Por favor, digite uma senha válida.</div>
                 
-                <small id="inauthpassdetails" class="form-text text-muted">A senha é utilizada para autenticar a solicitação.</small>
+                <small id="inuserpassdetails" class="form-text text-muted">A senha é utilizada para autenticar a solicitação.</small>
               </div>
             </div>
           </div>
         
         <?php endif; ?> 
         
-        <?php if (!isset($_SESSION['auth-user'])): ?>
+        <?php if (!isset($_SESSION['user-auth'])): ?>
 
         <div class="py-3">
           <div>
@@ -210,8 +210,8 @@
               <select id="inuserprofile" name="user-profile" class="form-control form-control-lg">
                 <option value="">Selecione o perfil...</option>
                 <option value="">----------</option>
-                <?php foreach ($CONFIG['profiles'] as $k => $v): ?> 
-                  <option value="<?= $k ?>" <?= ($TASK['user-profile'] == $k ? 'selected' : '') ?>><?= $v['name'] ?></option>
+                <?php foreach ($CONFIG['profiles'] as $key => $profile): ?> 
+                  <option value="<?= $key ?>" <?= ($TASK['user-profile'] == $key ? 'selected' : '') ?>><?= $profile['name'] ?></option>
                 <?php endforeach; ?>
               </select>
               <div class="invalid-feedback">Por favor, selecione o perfil com maior afinidade ao cargo que exerce na instituição.</div>
@@ -220,11 +220,11 @@
             </div>
         
             <div class="form-group">
-              <label for="inusercontact"><i class="fas fa-phone-alt"></i> Telefone de contato</label>
-              <input type="text" class="form-control form-control-lg" id="inusercontact" name="user-contact" aria-describedby="inusercontactdetails" placeholder="Digite seu telefone..." maxlength="15" value="<?= $TASK['user-contact'] ?>">
+              <label for="inuserphone"><i class="fas fa-phone-alt"></i> Telefone de contato</label>
+              <input type="text" class="form-control form-control-lg" id="inuserphone" name="user-phone" aria-describedby="inuserphonedetails" placeholder="Digite seu telefone..." maxlength="15" value="<?= $TASK['user-contact'] ?>">
               <div class="invalid-feedback">Por favor, digite um telefone válido.</div>
               
-              <small id="inusercontactdetails" class="form-text text-muted">O telefone será utilizado pela equipe de suporte para contactar o colaborador. Caso a equipe não consiga entrar em contato, a tarefa poderá ser fechada, portanto essa informação é de extrema importância.</small>
+              <small id="inuserphonedetails" class="form-text text-muted">O telefone será utilizado pela equipe de suporte para contactar o colaborador. Caso a equipe não consiga entrar em contato, a tarefa poderá ser fechada, portanto essa informação é de extrema importância.</small>
             </div>
           </div>
         </div>
@@ -250,8 +250,8 @@
               <select id="inlocalunity" name="local-unity" class="form-control form-control-lg" >
                 <option value="">Selecione a unidade...</option>
                 <option value="">----------</option>
-                <?php foreach ($CONFIG['units'] as $k => $v): ?>
-                <option value="<?= $k ?>" <?= ($TASK['local-unity'] == $k ? 'selected' : '') ?>><?= $v['name'] ?> (<?= $k ?>)</option>
+                <?php foreach ($CONFIG['units'] as $key => $unit): ?>
+                <option value="<?= $key ?>" <?= ($TASK['local-unity'] == $key ? 'selected' : '') ?>><?= $unit['name'] ?> (<?= strtoupper($key) ?>)</option>
                 <?php endforeach; ?>
               </select>
               <div class="invalid-feedback">Por favor, selecione uma unidade válida.</div>
@@ -279,9 +279,9 @@
             <select id="intaskcategory" name="task-category" class="form-control form-control-lg">
               <option value="">Selecione a categoria...</option>
               <option value="">----------</option>
-              <?php foreach ($CONFIG['categories'] as $k => $v): ?>
-                <?php if (isset($_SESSION['auth-user']) && $_SESSION['auth-authorization'] >= $v['authorization'] || $v['authorization'] == 0): ?>
-                  <option value="<?= $k ?>" <?= ($TASK['task-category'] == $k ? 'selected' : '') ?>><?= $v['name'] ?></option>
+              <?php foreach ($CONFIG['categories'] as $key => $category): ?>
+                <?php if (isset($_SESSION['user-auth']) && $_SESSION['user-authorization'] >= $category['authorization'] || $category['authorization'] == 0): ?>
+                  <option value="<?= $key ?>" <?= ($TASK['task-category'] == $key ? 'selected' : '') ?>><?= $category['name'] ?></option>
                 <?php endif; ?> 
               <?php endforeach; ?>
             </select>
@@ -290,15 +290,15 @@
             <small id="intaskcategorydetails" class="form-text text-muted">A categoria é utilizada para priorizarmos os atendimentos e levantarmos dados e estatísticas dos principais problemas encontrados nas unidades. Com isso, poderemos antecipar determinados problemas, atuando de forma preventiva economizando tempo e recursos dos colaboradores.</small>
           </div>
 
-          <?php if (isset($_SESSION['auth-user']) && $_SESSION['auth-authorization'] >= 1000): ?>
+          <?php if (isset($_SESSION['user-auth']) && $_SESSION['user-authorization'] >= 1000): ?>
 
           <div class="form-group">  
             <label for="intasksource"><i class="fas fa-tty"></i> Origem (Opcional)</label>
             <select id="intasksource" name="task-source" class="form-control form-control-lg">
               <option value="">Automático</option>
               <option value="">----------</option>
-              <?php foreach ($CONFIG['sources'] as $k => $v): ?>
-              <option value="<?= $k ?>" <?= ($TASK['task-source'] == $k ? 'selected' : '') ?>><?= $v['name'] ?></option>
+              <?php foreach ($CONFIG['sources'] as $key => $source): ?>
+              <option value="<?= $key ?>" <?= ($TASK['task-source'] == $key ? 'selected' : '') ?>><?= $source['name'] ?></option>
               <?php endforeach; ?>
             </select>
             <div class="invalid-feedback">Por favor, selecione uma opção válida.</div>
@@ -308,15 +308,15 @@
 
           <?php endif; ?> 
 
-          <?php if (isset($_SESSION['auth-user']) && $_SESSION['auth-authorization'] >= 1000): ?>
+          <?php if (isset($_SESSION['user-auth']) && $_SESSION['user-authorization'] >= 1000): ?>
 
           <div class="form-group">
             <label for="intaskresponsable"><i class="fas fa-users"></i> Responsável (Opcional)</label>
             <select id="intaskresponsable" name="task-responsable" class="form-control form-control-lg">
               <option value="">Automático</option>
               <option value="">----------</option>
-              <?php foreach ($CONFIG['users'] as $k => $v): ?>
-              <option value="<?= $k ?>" <?= ($TASK['task-responsable'] == $k ? 'selected' : '') ?>><?= $v['name'] ?> (@<?= strtolower($k) ?>)</option>
+              <?php foreach ($CONFIG['users'] as $key => $user): ?>
+              <option value="<?= $key ?>" <?= ($TASK['task-responsable'] == $key ? 'selected' : '') ?>><?= $user['name'] ?> (@<?= strtolower($key) ?>)</option>
               <?php endforeach; ?>
             </select>
             <div class="invalid-feedback">Por favor, selecione um responsável válido.</div>
@@ -382,16 +382,16 @@
                 </div>
                 <form method="post" action="index.php" id="moauthuserform">
                   <div class="form-group">
-                    <label for="inmoauthuser"><i class="fas fa-id-card"></i> Usuário</label>
-                    <input type="text" class="form-control form-control-lg" id="inmoauthuser" name="auth-user" aria-describedby="inmoauthuserdetails" placeholder="Digite seu usuário ou e-mail." maxlength="45" value="<?= $TASK['auth-user'] ?>">
+                    <label for="inuserauthuser"><i class="fas fa-id-card"></i> Usuário</label>
+                    <input type="text" class="form-control form-control-lg" id="inuserauthuser" name="user-auth" aria-describedby="inuserauthuserdetails" placeholder="Digite seu usuário ou e-mail." maxlength="45" value="<?= $TASK['user-auth'] ?>">
                     <div class="invalid-feedback">Por favor, digite seu usuário válido.</div>
 
-                    <small id="inmoauthuserdetails" class="form-text text-muted">O usuário será utilizado para identificação do colaborador na abertura do chamado.</small>
+                    <small id="inuserauthuserdetails" class="form-text text-muted">O usuário será utilizado para identificação do colaborador na abertura do chamado.</small>
                   </div>
               
                   <div class="form-group">
                     <label for="inmoauthpass"><i class="fas fa-key"></i> Senha</label>
-                    <input type="password" class="form-control form-control-lg" id="inmoauthpasspass" name="auth-pass" aria-describedby="inmoauthpassdetails" placeholder="Digite sua senha" maxlength="15">
+                    <input type="password" class="form-control form-control-lg" id="inmoauthpasspass" name="user-pass" aria-describedby="inmoauthpassdetails" placeholder="Digite sua senha" maxlength="15">
                     <div class="invalid-feedback">Por favor, digite uma senha válida.</div>
                     
                     <small id="inmoauthpassdetails" class="form-text text-muted">A senha é utilizada para autenticar a solicitação.</small>
@@ -479,7 +479,7 @@
         },
       });
 
-      $("#inusercontact").on("keyup", function(e)
+      $("#inuserphone").on("keyup", function(e)
       {
         $(this).val(
             $(this).val()
@@ -498,33 +498,33 @@
       $("#task").submit(function( event ) {
         var e;
 
-        if ($("#inauthuser").length)
+        if ($("#inuserauth").length)
         {
-          if (!$("#inauthuser").val().match(/^.{6,}/))
+          if (!$("#inuserauth").val().match(/^.{6,}/))
           {
-            $("#inauthuser").addClass("is-invalid");
+            $("#inuserauth").addClass("is-invalid");
 
             if (!e)
-              e = "#inauthuser";
+              e = "#inuserauth";
           }
           else
           {
-            $("#inauthuser").removeClass("is-invalid");
+            $("#inuserauth").removeClass("is-invalid");
           }
         }
 
-        if ($("#inauthpass").length)
+        if ($("#inuserpass").length)
         {
-          if (!$("#inauthpass").val().match(/^.{8,}/))
+          if (!$("#inuserpass").val().match(/^.{8,}/))
           {
-            $("#inauthpass").addClass("is-invalid");
+            $("#inuserpass").addClass("is-invalid");
 
             if (!e)
-              e = "#inauthpass";
+              e = "#inuserpass";
           }
           else
           {
-            $("#inauthpass").removeClass("is-invalid");
+            $("#inuserpass").removeClass("is-invalid");
           }
         }
 
@@ -541,18 +541,18 @@
           $("#inuserprofile").removeClass("is-invalid");
         }
 
-        if ($("#inusercontact").length)
+        if ($("#inuserphone").length)
         {
-          if (!$("#inusercontact").val().match(/^\(\d{2}\) \d?\s?\d{4}\-\d{4}$/))
+          if (!$("#inuserphone").val().match(/^\(\d{2}\) \d?\s?\d{4}\-\d{4}$/))
           {
-            $("#inusercontact").addClass("is-invalid");
+            $("#inuserphone").addClass("is-invalid");
 
             if (!e)
-              e = "#inusercontact";
+              e = "#inuserphone";
           }
           else
           {
-            $("#inusercontact").removeClass("is-invalid");
+            $("#inuserphone").removeClass("is-invalid");
           }
         }     
 

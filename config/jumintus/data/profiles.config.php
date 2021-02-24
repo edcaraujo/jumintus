@@ -28,7 +28,7 @@
     ],
 
     'inf' => [
-      'name' => 'Infataria',
+      'name' => 'Infantaria',
       'description' => '',
 
       'authorization' => 0,

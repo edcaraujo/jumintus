@@ -24,26 +24,16 @@
      * Setting task...
      * 
      */
-    
-    echo '<h1>SESSION</h1>';
-    echo '<pre>'; 
-    print_r($_SESSION);
-    echo '</pre>'; 
 
-    echo '<h1>POST</h1>';
-    echo '<pre>'; 
-    print_r($_POST);
-    echo '</pre>'; 
-    
-    function setup() {
+    function create() {
         global $CONFIG;
 
         $TASK = [
           'task-timestamp' => '',
           'task-uuid' => '', 
 
-          'auth-user' => '',
-          'auth-pass' => '',   
+          'user-auth' => '',
+          'user-pass' => '',   
     
           'task-category' => '',
           'task-description' => '',
@@ -97,36 +87,36 @@
             return $TASK;
         }
 
-        // Setting 'auth-user'...
+        // Setting 'user-auth'...
 
-        if (!isset($_SESSION['auth-user'])) {
-            if (!empty($_POST['auth-user'])) {
-                $TASK['auth-user'] = explode('@',$_POST['auth-user'])[0];
+        if (!isset($_SESSION['user-auth'])) {
+            if (!empty($_POST['user-auth'])) {
+                $TASK['user-auth'] = explode('@',$_POST['user-auth'])[0];
             } else {
                 $TASK['task-errors'][] = 'Usuário não especificado. Tente novamente.'; 
                 return $TASK;
             }
         } else {
-            $TASK['auth-user'] = $_SESSION['auth-user'];
+            $TASK['user-auth'] = $_SESSION['user-auth'];
         }
 
-        // Setting 'auth-pass'...
+        // Setting 'user-pass'...
 
-        if (!isset($_SESSION['auth-user'])) {
-            if (!empty($_POST['auth-pass'])) {
-                $TASK['auth-pass'] = $_POST['auth-pass'];
+        if (!isset($_SESSION['user-auth'])) {
+            if (!empty($_POST['user-pass'])) {
+                $TASK['user-pass'] = $_POST['user-pass'];
             } else {
                 $TASK['task-errors'][] = 'Senha não especificada. Tente novamente.'; 
                 return $TASK;
             }
         } else {
-            $TASK['auth-pass'] = $_SESSION['auth-pass'];
+            $TASK['user-pass'] = $_SESSION['user-pass'];
         }
 
-        // Authticating...
-        if (!isset($_SESSION['auth-user'])) {
+        // Setting 'user-*'...
+        if (!isset($_SESSION['user-auth'])) {
             foreach($CONFIG['jumintus']['auth'] as $item) {
-                $data = $CONFIG['auth'][$item]($TASK['auth-user'],$TASK['auth-pass']);
+                $data = $CONFIG['auth'][$item]($TASK['user-auth'],$TASK['user-pass']);
 
                 if ($data) {
                     $TASK['user-name'] = $data['name'];
@@ -136,15 +126,29 @@
                     break;
                 }
             }
+
+            if (!empty($_POST['user-profile'])) {
+              $TASK['user-profile'] = $_POST['user-profile'];
+            } else {
+              $TASK['task-errors'][] = 'Perfil não especificada. Tente novamente.'; 
+              return $TASK;
+            }
+
+            if (!empty($_POST['user-phone'])) {
+              $TASK['user-phone'] = $_POST['user-phone'];
+            } else {
+              $TASK['task-errors'][] = 'Telefone não especificado. Tente novamente.'; 
+              return $TASK;
+            }
         } else {
-            $TASK['user-code'] = $_SESSION['auth-code'];
-            $TASK['user-name'] = $_SESSION['auth-name'];
-            $TASK['user-profile'] = $_SESSION['auth-profile'];
-            $TASK['user-role'] = $_SESSION['auth-role'];
-            $TASK['user-phone'] = $_SESSION['auth-phone'];
-            $TASK['user-email'] = $_SESSION['auth-email'];
-            $TASK['user-alternative'] = $_SESSION['auth-alternative'];
-            $TASK['user-authorization'] = $_SESSION['auth-authorization'];
+            $TASK['user-code'] = $_SESSION['user-code'];
+            $TASK['user-name'] = $_SESSION['user-name'];
+            $TASK['user-profile'] = $_SESSION['user-profile'];
+            $TASK['user-role'] = $_SESSION['user-role'];
+            $TASK['user-phone'] = $_SESSION['user-phone'];
+            $TASK['user-email'] = $_SESSION['user-email'];
+            $TASK['user-alternative'] = $_SESSION['user-alternative'];
+            $TASK['user-authorization'] = $_SESSION['user-authorization'];
         }
 
         if (empty($TASK['user-name']) || empty($TASK['user-role']) || empty($TASK['user-email'])) {
@@ -280,7 +284,7 @@
         foreach($CONFIG['jumintus']['rules'] as $rule) {
             if (($rule[0] == '*' || $TASK['task-timestamp'] >= strtotime($rule[0])) && //
                 ($rule[1] == '*' || $TASK['task-timestamp'] < strtotime($rule[1])) &&
-                ($rule[2] == '*' || $TASK['auth-user'] == $rule[2]) &&
+                ($rule[2] == '*' || $TASK['user-auth'] == $rule[2]) &&
                 ($rule[3] == '*' || $TASK['user-profile'] == $rule[3]) &&
                 ($rule[4] == '*' || $TASK['user-role'] == $rule[4]) &&
                 ($rule[5] == '*' || $TASK['task-authorization'] <= $rule[5]) &&
@@ -307,29 +311,97 @@
         return $TASK;
     }
 
-    $TASK = setup();
-
-    if (empty($TASK['task-errors'])) {
-
-      // TODO
-    
-    } else {
-      $upload = 'tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/';
+    function delete($task) {
+      $upload = 'tasks'.'/'.$task.'/'.'attachments'.'/';
 
       foreach(scandir($upload) as $attachment) {
         if (!in_array($attachment,['.','..'])) {
-          unlink('tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/'.$attachment);
+          unlink('tasks'.'/'.$task.'/'.'attachments'.'/'.$attachment);
         }
       }
 
-      rmdir('tasks'.'/'.$TASK['task-uuid'].'/'.'attachments');
-      rmdir('tasks'.'/'.$TASK['task-uuid']);
+      rmdir('tasks'.'/'.$task.'/'.'attachments');
+      rmdir('tasks'.'/'.$task);
     }
 
+    $TASK = create();
+
+    if (empty($TASK['task-errors'])) {
+
+      $mailer = new PHPMailer();
+
+      $mailer->IsSMTP();  
+      $mailer->SMTPDebug = 0;
+      $mailer->SMTPAuth = true;
+      $mailer->IsHTML(false);  
+      
+      if (!empty($CONFIG['mailer']['host'])) {
+        $mailer->Host = $CONFIG['mailer']['host'];
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: \'host\' não está configurado no mailer. Tente novamente mais tarde';
+      }
+
+      if (!empty($CONFIG['mailer']['port'])) {
+        $mailer->Host = $CONFIG['mailer']['port'];
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: \'port\' não está configurado no mailer. Tente novamente mais tarde';
+      }
+
+      if (!empty($CONFIG['mailer']['username'])) {
+        $mailer->Host = $CONFIG['mailer']['username'];
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: \'username\' não está configurado no mailer. Tente novamente mais tarde';
+      }
+
+      if (!empty($CONFIG['mailer']['password'])) {
+        $mailer->Host = $CONFIG['mailer']['password'];
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: \'password\' não está configurado no mailer. Tente novamente mais tarde';
+      }
+
+      if (!empty($TASK['task-project'])) {
+        $mailer->AddAddress('x+'.$TASK['task-project'].'@mail.asana.com');
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: o projeto do asana não está configurado. Tente novamente mais tarde';
+      }
+
+      $addressee = $mailer->AddAddress($CONFIG['asana']['username']);
+
+      if (!empty($TASK['task-responsable'])) {
+        if (!empty($CONFIG['users'][$TASK['task-responsable']]) && !empty($CONFIG['users'][$TASK['task-responsable']]['asana'])) {
+          $mailer->AddAddress($CONFIG['users'][$TASK['task-responsable']]['asana']);
+        }
+      }
+
+      foreach($CONFIG['users'] as $key => $user) {
+        if ($user['authorization'] >= 1000) {
+          $mailer->AddCC($user['asana']);
+        }
+      }
+
+      $subject = "[Jumintus] Olá Mundo";
+      $message = "Olá Mundo!";
+  
+      $mailer->Subject = utf8_decode($subject);
+      $mailer->Body = utf8_decode($message);
+
+      if (!$mailer->Send()) {
+        $TASK['task-errors'][] = 'Parece que tivemos um problema com o nosso servidor de e-mail (\''.$mailer->ErrorInfo.'\')';
+      }
+
+      $mailer->clearAddresses(); unset($mailer);
+    } 
+
+    if (!empty($TASK['task-errors'])) {
+      delete($TASK['task-uuid']);
+    }
+
+    /*
     echo '<h1>TASK</h1>';
     echo '<pre>'; 
     print_r($TASK);
     echo '</pre>';
+    */
 ?>
 
 <!DOCTYPE html>
@@ -351,13 +423,13 @@
 
       <div class="navbar-collapse collapse">
         <ul class="navbar-nav ml-auto">
-          <?php if (!isset($_SESSION['auth-user'])): ?>
+          <?php if (!isset($_SESSION['user-auth'])): ?>
             <li class="nav-item">
               <a class="btn btn-outline-light" href="index.php" data-toggle="modal" data-target="#moauthuser"><i class="fas fa-sign-in-alt"></i> Login</a>  
             </li>
           <?php else: ?> 
             <li class="nav-item">
-              <span class="nav-link active" href="index.php?do=logout"> <?= $_SESSION['auth-name'] ?> (@<?= $_SESSION['auth-user'] ?>)</span>
+              <span class="nav-link active" href="index.php?do=logout"> <?= $_SESSION['user-name'] ?> (@<?= $_SESSION['user-auth'] ?>)</span>
             </li>
             <li class="nav-item">
               <a class="btn btn-light" href="index.php?do=logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -426,13 +498,13 @@
               </div>
             </div>
           </div>
-
+        <?php endforeach; ?>
+          
           <div class="py-3">
             <div class="text-center">
               <a href="index.php" class="btn btn-primary" role="button"><i class="fas fa-arrow-alt-circle-left"></i> Voltar</a>
             </div>
           </div>
-        <?php endforeach; ?>
       <?php endif; ?>
 
       <?php if (empty($TASK['task-errors'])): ?>
@@ -478,7 +550,7 @@
                       <div>
                         <h3 class="text-uppercase"><b><i class="fas fa-user"></i> <?= $TASK['user-name'] ?></b></h3>
                         <h4 class="text-uppercase"><i class="fas fa-briefcase"></i> <?= $TASK['user-role'] ?></h4>
-                        <p><i class="fas fa-id-card-alt"></i> <?= $TASK['auth-user'] ?> • <i class="fas fa-unlock-alt"></i> <?= $TASK['user-authorization'] ?></p>
+                        <p><i class="fas fa-id-card-alt"></i> <?= $TASK['user-auth'] ?> • <i class="fas fa-unlock-alt"></i> <?= $TASK['user-authorization'] ?></p>
                       </div>
                       
                       <div>
@@ -507,6 +579,8 @@
                       <dl>
                         <dt><i class="fas fa-phone-alt"></i> Telefone:</dt>
                         <dd><?= $TASK['user-phone'] ?></dd>
+                        <dt><i class="fas fa-phone-alt"></i> Perfil:</dt>
+                        <dd><?= $TASK['user-profile'] ?></dd>
                       </dl>
                     </div>
 

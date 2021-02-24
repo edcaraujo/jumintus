@@ -4,7 +4,7 @@
     'systallone' => [
       'code' => '456982',
       'name' => 'Sylvester Stallone',
-      'profile' => 'Infataria',
+      'profile' => 'inf',
       'role' => 'Boina Verde',
       'phone' => '(16) 91234-1234',
       'email' => 'systallone@edcaraujo.com',
@@ -20,7 +20,7 @@
     'jeli' => [
       'code' => '456983',
       'name' => 'Jet Li',
-      'profile' => 'Infataria',
+      'profile' => 'inf',
       'role' => 'Boina Verde',
       'phone' => '(16) 91234-1234',
       'email' => 'jeli@edcaraujo.com',
@@ -36,7 +36,7 @@
     'tecrews' => [
       'code' => '456984',
       'name' => 'Terry Crews',
-      'profile' => 'Infataria',
+      'profile' => 'inf',
       'role' => 'Boina Verde',
       'phone' => '(16) 91234-1234',
       'email' => 'tecrews@edcaraujo.com',
