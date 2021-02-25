@@ -1,0 +1,26 @@
+[{{task-uuid}}] : [{{task-date}}] : [{{task-time}}]
+
+Solicitação enviada por [[user-name]] ({{user-auth}}) em escala '[[task-schedule@name]]' com o protocolo '{{task-uuid}}' às {{task-date}} {{task-time}}. Esta solicitação foi encaminhada de forma autenticada através do sistema Jumintus (v{{jumintus-version}}) por meio de usuário e senha sob responsabilidade de [[user-name]] ({{user-auth}}).
+
+# DESCRIÇÃO
+
+Categoria: [[task-category@name]].
+
+"{{task-description}}"
+(Descrição conforme realizada pelo solicitante)
+
+# LOCALIZAÇÃO
+
+Etiqueta: [[local-label]]. 
+Unidade: [[local-unity@name]] ([[local-unity]]). 
+Setor: TI.
+
+# IDENTIFICAÇÃO
+
+Solicitante: [[user-name]] ({{user-auth}}). 
+Perfil: [[user-profile@name]].
+Cargo: [[user-role]]. 
+Telefone: [[user-phone]].
+
+--
+Esta solicitação pode conter informação confidencial ou privilegiada, sendo seu sigilo protegido por lei. Se você não for a pessoa autorizada a acessar esta solicitação, não pode usar, copiar ou divulgar as informações nela contidas ou tomar qualquer ação baseada nessas informações. Se você acessou ou recebeu uma cópia desta solicitação por engano, por favor, avise imediatamente a equipe técnica de informática  e em seguida apague-a.

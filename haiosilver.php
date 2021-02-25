@@ -71,6 +71,8 @@
         // Setting 'task-timestamp'...
 
         $TASK['task-timestamp'] = time();
+        $TASK['task-date'] = date('d/m/Y',$TASK['task-timestamp']);
+        $TASK['task-time'] = date('H:i:m',$TASK['task-timestamp']);
 
         // Setting 'task-uuid'...
 
@@ -115,6 +117,8 @@
 
         // Setting 'user-*'...
         if (!isset($_SESSION['user-auth'])) {
+
+
             foreach($CONFIG['jumintus']['auth'] as $item) {
                 $data = $CONFIG['auth'][$item]($TASK['user-auth'],$TASK['user-pass']);
 
@@ -183,6 +187,12 @@
         } 
 
         // Setting 'task-responsable'...
+
+        $TASK['task-responsable'] = '*';   
+
+        if (!empty($_POST['task-responsable'])) {
+            $TASK['task-responsable'] = $_POST['task-responsable'];
+        } 
         
         // Setup by rules.
 
@@ -273,15 +283,35 @@
 
         // Analyzing rules...
 
-        $lists = [];
+        $lists = []; 
 
         foreach(array_keys($TASK) as $property) {
             if (is_array($TASK[$property])) {
                 $lists[] = $property;
             }
+
+            if ($TASK[$property] == '*') {
+              $defaults = $property;
+            }
+        }
+
+        $locks = [];
+
+        if ($TASK['task-schedule'] != '*') {
+          $locks[] = 'task-schedule';
+        }
+
+        if ($TASK['task-source'] != '*') {
+          $locks[] = 'task-source';
+        }
+
+        if ($TASK['task-responsable'] != '*') {
+          $locks[] = 'task-responsable';
         }
 
         foreach($CONFIG['jumintus']['rules'] as $rule) {
+          if (array_key_exists($rule[15],$TASK)) {
+
             if (($rule[0] == '*' || $TASK['task-timestamp'] >= strtotime($rule[0])) && //
                 ($rule[1] == '*' || $TASK['task-timestamp'] < strtotime($rule[1])) &&
                 ($rule[2] == '*' || $TASK['user-auth'] == $rule[2]) &&
@@ -297,15 +327,16 @@
                 ($rule[12] == '*' || $TASK['local-label'] == $rule[12]) &&
                 ($rule[13] == '*' || $TASK['local-unity'] == $rule[13]) &&
                 ($rule[14] == '*' || $TASK['local-departament'] == $rule[14])) {
-                    
-                if (array_key_exists($rule[15],$TASK)) {
-                    if (in_array($rule[15],$lists)) {
-                        $TASK[$rule[15]][] = $rule[16];
-                    } else {
-                        $TASK[$rule[15]] = $rule[16];
-                    }
+
+              if (!in_array($rule[15],$locks)) {
+                if (in_array($rule[15],$lists)) {
+                  $TASK[$rule[15]][] = $rule[16];
+                } else {
+                  $TASK[$rule[15]] = $rule[16];
                 }
-            }           
+              }
+            } 
+          }           
         }
 
         return $TASK;
@@ -324,6 +355,32 @@
       rmdir('tasks'.'/'.$task);
     }
 
+    function process($template, $task) {
+      global $CONFIG;
+
+      $content = file_get_contents($template);
+
+      $naming = [
+        'task-category' => 'categories',
+        'task-source' => 'sources',
+        'task-schedule' => 'schedules',
+        'local-unity' => 'units',
+        'user-profile' => 'profiles',
+      ];
+
+      foreach ($task as $k => $v) {
+        $content = str_replace('{{'.$k.'}}', (is_array($v) ? implode(',',$v) : $v), $content);
+        $content = str_replace('{{'.$k.'@name}}', (array_key_exists($k,$naming) ? $CONFIG[$naming[$k]][$v]['name'] : ''), $content);
+        $content = str_replace('[['.$k.']]', mb_strtoupper((is_array($v) ? implode(',',$v) : $v)), $content);
+        $content = str_replace('[['.$k.'@name]]', mb_strtoupper((array_key_exists($k,$naming) ? $CONFIG[$naming[$k]][$v]['name'] : '')), $content);
+      }
+
+      $content = str_replace('{{jumintus-version}}', $CONFIG['jumintus']['version'], $content);
+      $content = str_replace('[[jumintus-version]]', mb_strtoupper($CONFIG['jumintus']['version']), $content);
+
+      return $content;
+    }
+
     $TASK = create();
 
     if (empty($TASK['task-errors'])) {
@@ -334,7 +391,7 @@
       $mailer->SMTPDebug = 0;
       $mailer->SMTPAuth = true;
       $mailer->IsHTML(false);  
-      
+    
       if (!empty($CONFIG['mailer']['host'])) {
         $mailer->Host = $CONFIG['mailer']['host'];
       } else {
@@ -342,51 +399,115 @@
       }
 
       if (!empty($CONFIG['mailer']['port'])) {
-        $mailer->Host = $CONFIG['mailer']['port'];
+        $mailer->Port = $CONFIG['mailer']['port'];
       } else {
         $TASK['task-errors'][] = 'Parece que erramos em algo: \'port\' não está configurado no mailer. Tente novamente mais tarde';
       }
 
       if (!empty($CONFIG['mailer']['username'])) {
-        $mailer->Host = $CONFIG['mailer']['username'];
+        $mailer->Username = $CONFIG['mailer']['username'];
+        $mailer->SetFrom($CONFIG['mailer']['username'], utf8_decode('Jumintus'));
       } else {
         $TASK['task-errors'][] = 'Parece que erramos em algo: \'username\' não está configurado no mailer. Tente novamente mais tarde';
       }
 
       if (!empty($CONFIG['mailer']['password'])) {
-        $mailer->Host = $CONFIG['mailer']['password'];
+        $mailer->Password = $CONFIG['mailer']['password'];
       } else {
         $TASK['task-errors'][] = 'Parece que erramos em algo: \'password\' não está configurado no mailer. Tente novamente mais tarde';
       }
 
-      if (!empty($TASK['task-project'])) {
+      if (!empty($TASK['task-project']) && in_array($TASK['task-project'],$CONFIG['asana']['projects'])) {
         $mailer->AddAddress('x+'.$TASK['task-project'].'@mail.asana.com');
       } else {
         $TASK['task-errors'][] = 'Parece que erramos em algo: o projeto do asana não está configurado. Tente novamente mais tarde';
       }
-
-      $addressee = $mailer->AddAddress($CONFIG['asana']['username']);
 
       if (!empty($TASK['task-responsable'])) {
         if (!empty($CONFIG['users'][$TASK['task-responsable']]) && !empty($CONFIG['users'][$TASK['task-responsable']]['asana'])) {
           $mailer->AddAddress($CONFIG['users'][$TASK['task-responsable']]['asana']);
         }
       }
-
+      
       foreach($CONFIG['users'] as $key => $user) {
         if ($user['authorization'] >= 1000) {
           $mailer->AddCC($user['asana']);
         }
       }
+      
+      if (empty($TASK['task-errors'])) {
+        $subject = process('templates/subject.task.template.jumintus',$TASK);
+        $message = process('templates/task.template.jumintus',$TASK);
+    
+        $mailer->Subject = utf8_decode(wordwrap($subject, 80, "\n"));
+        $mailer->Body = utf8_decode(wordwrap($message, 80, "\n"));
 
-      $subject = "[Jumintus] Olá Mundo";
-      $message = "Olá Mundo!";
-  
-      $mailer->Subject = utf8_decode($subject);
-      $mailer->Body = utf8_decode($message);
+        foreach ($TASK['task-attachments'] as $attachment) {
+          $mailer->AddAttachment('tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/'.$attachment, $attachment);
+        }
 
-      if (!$mailer->Send()) {
-        $TASK['task-errors'][] = 'Parece que tivemos um problema com o nosso servidor de e-mail (\''.$mailer->ErrorInfo.'\')';
+        if (!$mailer->Send()) {
+          $TASK['task-errors'][] = 'Parece que tivemos um problema com o nosso servidor de e-mail (\''.$mailer->ErrorInfo.'\')';
+        }
+      }
+
+      $mailer->clearAddresses(); unset($mailer);
+    } 
+
+    if (empty($TASK['task-errors'])) {
+
+      $mailer = new PHPMailer();
+
+      $mailer->IsSMTP();  
+      $mailer->SMTPDebug = 0;
+      $mailer->SMTPAuth = true;
+      $mailer->IsHTML(false);  
+    
+      if (!empty($CONFIG['mailer']['host'])) {
+        $mailer->Host = $CONFIG['mailer']['host'];
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: \'host\' não está configurado no mailer. Tente novamente mais tarde';
+      }
+
+      if (!empty($CONFIG['mailer']['port'])) {
+        $mailer->Port = $CONFIG['mailer']['port'];
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: \'port\' não está configurado no mailer. Tente novamente mais tarde';
+      }
+
+      if (!empty($CONFIG['mailer']['username'])) {
+        $mailer->Username = $CONFIG['mailer']['username'];
+        $mailer->SetFrom($CONFIG['mailer']['username'], utf8_decode('Jumintus'));
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: \'username\' não está configurado no mailer. Tente novamente mais tarde';
+      }
+
+      if (!empty($CONFIG['mailer']['password'])) {
+        $mailer->Password = $CONFIG['mailer']['password'];
+      } else {
+        $TASK['task-errors'][] = 'Parece que erramos em algo: \'password\' não está configurado no mailer. Tente novamente mais tarde';
+      }
+
+      $mailer->AddAddress($TASK['user-email']);
+
+      foreach ($TASK['task-follows'] as $follow) {
+        $mailer->AddCC($follow);
+      }
+ 
+      if (empty($TASK['task-errors'])) {
+        $subject = process('templates/subject.create.template.jumintus',$TASK);
+        $message = process('templates/create.template.jumintus',$TASK);
+    
+        $mailer->Subject = utf8_decode(wordwrap($subject, 80, "\n"));
+        $mailer->Body = utf8_decode(wordwrap($message, 80, "\n"));
+
+        foreach ($TASK['task-attachments'] as $attachment) {
+          $mailer->AddAttachment('tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/'.$attachment, $attachment);
+        }
+
+        if (!$mailer->Send()) {
+          $TASK['task-errors'][] = 'Parece que tivemos um problema com o nosso servidor de e-mail (\''.$mailer->ErrorInfo.'\')';
+        }
       }
 
       $mailer->clearAddresses(); unset($mailer);
@@ -395,13 +516,6 @@
     if (!empty($TASK['task-errors'])) {
       delete($TASK['task-uuid']);
     }
-
-    /*
-    echo '<h1>TASK</h1>';
-    echo '<pre>'; 
-    print_r($TASK);
-    echo '</pre>';
-    */
 ?>
 
 <!DOCTYPE html>
@@ -564,7 +678,7 @@
                   </div>
                   <div class="col-md-4">
                     <div class="text-center text-md-right">
-                        <img src="https://chart.googleapis.com/chart?chs=120x120&cht=qr&chl=<?= urlencode($Y['url'].'/'.$TASK['task-uid'].'/') ?>&choe=UTF-8&chld=L|0" alt="<?php echo $TASK['task-uid']; ?>" />
+                        <img src="https://chart.googleapis.com/chart?chs=120x120&cht=qr&chl=<?= urlencode($CONFIG['jumintus']['url'].'/'.'tasks'.'/'.$TASK['task-uuid'].'/') ?>&choe=UTF-8&chld=L|0" alt="<?php echo $TASK['task-uuid']; ?>" />
                         <p><i><small>Código do chamado</small></i></p>
                     </div>
                   </div>
@@ -580,7 +694,7 @@
                         <dt><i class="fas fa-phone-alt"></i> Telefone:</dt>
                         <dd><?= $TASK['user-phone'] ?></dd>
                         <dt><i class="fas fa-phone-alt"></i> Perfil:</dt>
-                        <dd><?= $TASK['user-profile'] ?></dd>
+                        <dd><?= $CONFIG['profiles'][$TASK['user-profile']]['name'] ?></dd>
                       </dl>
                     </div>
 
@@ -590,9 +704,9 @@
                       </div>
                       <dl>
                         <dt><i class="fas fa-tag"></i> Etiqueta:</dt>
-                        <dd><?= (!$TASK['local-label'] ? "Não informado" : $TASK['local-label']) ?></dd>
+                        <dd><?= (!$TASK['local-label'] ? "Não informada" : $TASK['local-label']) ?></dd>
                         <dt><i class="fas fa-building"></i> Unidade:</dt>
-                        <dd><?= $CONFIG['units'][$TASK['local-unity']]['name'] ?> (<?= strtoupper($TASK['local-unity']) ?>)</dd>
+                        <dd><?= $CONFIG['units'][$TASK['local-unity']]['name'] ?> (<?= mb_strtoupper($TASK['local-unity']) ?>)</dd>
                         <dt><i class="fas fa-door-open"></i> Setor:</dt>
                         <dd><?= $TASK['local-departament'] ?></dd>
                       </dl>
