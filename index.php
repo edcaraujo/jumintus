@@ -68,10 +68,11 @@
   session_start();
 
   if (isset($_POST['user-auth']) && isset($_POST['user-pass'])) {
+   
     foreach($CONFIG['jumintus']['auth'] as $item) {
       $data = $CONFIG['auth'][$item](explode('@',$_POST['user-auth'])[0],$_POST['user-pass']);
 
-      if ($data) {
+      if (array_key_exists($data['user'], $CONFIG['users'])) {
         $_SESSION['user-auth'] = $data['user'];
         $_SESSION['user-code'] = $data['code'];
         $_SESSION['user-name'] = $data['name'];
@@ -90,7 +91,7 @@
     }
   }
 
-  if ($_GET['do'] == 'logout') {
+  if (isset($_GET['do']) && $_GET['do'] == 'logout') {
     session_unset();
     session_destroy();
   }
