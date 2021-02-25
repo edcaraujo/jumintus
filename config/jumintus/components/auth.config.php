@@ -1,28 +1,28 @@
 <?php
   return [
-    'jumintus-config' => function($auth, $pass) {
-        $USERS = include('users.config.php'); 
+    'jumintus-config' => function($user, $pass) {
+        $USERS = include('config/jumintus/data/users.config.php'); 
         
-        $auth = trim($auth);
+        $user = trim($user);
         $pass = md5(trim($pass));
 
-        foreach($USERS as $key => $user) {
-          
-          if ($auth == $key && $pass == $user['password']) {
+        if (array_key_exists($user,$USERS)) {
+          $data = $USERS[$user];
 
+          if ($pass == $data['password']) {
             return [
-              'user' => $key,
-              'code' => $user['code'],
-              'name' => $user['name'],
-              'profile' => $user['profile'],
-              'role' => $user['role'],
-              'phone' => $user['phone'],
-              'email' => $user['email'],
-              'alternative' => $user['alternative'],
+              'user' => $user,
+              'code' => $data['code'],
+              'name' => $data['name'],
+              'profile' => $data['profile'],
+              'role' => $data['role'],
+              'phone' => $data['phone'],
+              'email' => $data['email'],
+              'alternative' => $data['alternative'],
 
-              'asana' => $user['asana'],
+              'asana' => $data['asana'],
 
-              'authorization' => $user['authorization'],
+              'authorization' => $data['authorization'],
             ];
           }
         }
@@ -30,34 +30,34 @@
         return false; 
       },
 
-      'jumintus-data' => function($auth, $pass) {
+      'jumintus-data' => function($user, $pass) {
         $USERS = include('users.config.php');  
 
-        $auth = trim($auth);
+        $user = trim($user);
         $pass = md5(trim($pass));
 
         $f = fopen('data/users.data.csv', 'r');
 
         if ($f) {
           while (($line = fgets($f)) !== false) {
-            $user = explode(',',utf8_encode($line));
+            $data = explode(',',utf8_encode($line));
 
-            if ($auth == trim($user[0]) && $pass == trim($user[10])) { 
+            if ($user == trim($data[0]) && $pass == trim($data[10])) { 
               fclose($f);
               
               return [
-                'user' => $user[0],
-                'code' => $user[1],
-                'name' => $user[2],
-                'profile' => $user[3],
-                'role' => $user[4],
-                'phone' => $user[5],
-                'email' => $user[6],
-                'alternative' => $user[7],
+                'user' => $data[0],
+                'code' => $data[1],
+                'name' => $data[2],
+                'profile' => $data[3],
+                'role' => $data[4],
+                'phone' => $data[5],
+                'email' => $data[6],
+                'alternative' => $data[7],
                 
-                'asana' => $user[8],
+                'asana' => $data[8],
 
-                'authorization' => $user[9],
+                'authorization' => $data[9],
               ];
             }
           }

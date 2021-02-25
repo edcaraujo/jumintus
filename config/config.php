@@ -10,14 +10,23 @@
     'jumintus/data/users.config.php',
     'jumintus/data/schedules.config.php',
     'jumintus/data/profiles.config.php',
+
+    'misc/mailer.config.php',
+    'misc/asana.config.php',
   ];
 
-  foreach($INCLUDES as $item) 
-  {
-    $d = getcwd().'/'.'config'; $name = basename($item,'.config.php');
+  foreach($INCLUDES as $item) {
+    $r = getcwd().'/'.'config'; 
+    $d = dirname($item);
+    $f = basename($item);
 
-    if (file_exists($d.'/'.$item))
-      $CONFIG[$name] = include($d.'/'.$item);   
+    $name = basename($item,'.config.php');
+
+    if (file_exists($r.'/'.$d.'/'.'local.'.$f)) {
+      $CONFIG[$name] = include($r.'/'.$d.'/'.'local.'.$f);   
+    } else if (file_exists($r.'/'.$d.'/'.$f)) {
+      $CONFIG[$name] = include($r.'/'.$d.'/'.$f);   
+    }
   }
 
   return $CONFIG;
