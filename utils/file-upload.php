@@ -35,7 +35,7 @@ function upload() {
             if (in_array(strtolower($ext),['pdf']))
                 $type = 'pdf';
 
-            if (in_array(strtolower($ext),['jpg','jpeg']))
+            if (in_array(strtolower($ext),['jpg','jpeg','png','gif','svg']))
                 $type = 'image';
 
             if (in_array(strtolower($ext),['txt','csv','md']))
@@ -47,7 +47,7 @@ function upload() {
             if(move_uploaded_file($filepath, $newfilepath)) {
                 return [
                     'initialPreview' => [
-                        $newfilepath
+                        $CONFIG['url'].'/'.$upload.'/'.$newfilename
                     ],
 
                     'initialPreviewConfig' => [[
