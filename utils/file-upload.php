@@ -11,7 +11,7 @@ function upload() {
         return [];
     }
 
-    $upload = 'tasks/'.$_POST['UUID'].'/attachments';
+    $upload = 'data'.'/'.'tmp'.'/'.$_POST['UUID'].'/attachments';
 
     if (!is_dir('../'.$upload)) {
         mkdir('../'.$upload,0777, true);
@@ -38,7 +38,7 @@ function upload() {
             if (in_array(strtolower($ext),['jpg','jpeg','png','gif','svg']))
                 $type = 'image';
 
-            if (in_array(strtolower($ext),['txt','csv','md']))
+            if (in_array(strtolower($ext),['txt','md']))
                 $type = 'text';
 
             $newfilename = $id.'.'.$ext;
@@ -47,7 +47,7 @@ function upload() {
             if(move_uploaded_file($filepath, $newfilepath)) {
                 return [
                     'initialPreview' => [
-                        $CONFIG['url'].'/'.$upload.'/'.$newfilename
+                       $upload.'/'.$newfilename
                     ],
 
                     'initialPreviewConfig' => [[

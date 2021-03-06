@@ -245,7 +245,7 @@
 
         // Setting 'task-attachments'...
 
-        $upload = 'tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/';
+        $upload = 'data'.'/'.'tmp'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/';
 
         foreach(scandir($upload) as $attachment) {
           if (!in_array($attachment,['.','..'])) {
@@ -343,16 +343,41 @@
     }
 
     function delete($task) {
-      $upload = 'tasks'.'/'.$task.'/'.'attachments'.'/';
+      $tmp = 'data'.'/'.'tmp'.'/'.$task;
 
-      foreach(scandir($upload) as $attachment) {
-        if (!in_array($attachment,['.','..'])) {
-          unlink('tasks'.'/'.$task.'/'.'attachments'.'/'.$attachment);
+      foreach(scandir($tmp.'/'.'attachments') as $file) {
+        if (!in_array($file,['.','..'])) {
+          unlink($tmp.'/'.'attachments'.'/'.$file);
         }
       }
 
-      rmdir('tasks'.'/'.$task.'/'.'attachments');
-      rmdir('tasks'.'/'.$task);
+      rmdir($tmp.'/'.'attachments');
+
+      foreach(scandir($tmp) as $file) {
+        if (!in_array($file,['.','..'])) {
+          unlink($tmp.'/'.$file);
+        }
+      }
+
+      rmdir($tmp);
+
+      $data = 'data'.'/'.'tmp'.'/'.$task;
+
+      foreach(scandir($data.'/'.'attachments') as $file) {
+        if (!in_array($file,['.','..'])) {
+          unlink($data.'/'.'attachments'.'/'.$file);
+        }
+      }
+
+      rmdir($data.'/'.'attachments');
+
+      foreach(scandir($data) as $file) {
+        if (!in_array($file,['.','..'])) {
+          unlink($data.'/'.$file);
+        }
+      }
+
+      rmdir($data);
     }
 
     function process($template, $task) {
@@ -506,12 +531,34 @@
         }
 
         if (!$mailer->Send()) {
-          $TASK['task-errors'][] = 'Parece que tivemos um problema com o nosso servidor de e-mail (\''.$mailer->ErrorInfo.'\')';
+          $TASK['task-warnings'][] = 'Parece que tivemos um problema com o nosso servidor de e-mail (\''.$mailer->ErrorInfo.'\'). Isso não irá afetar o atendimento, porém é recomendado alertar a equipe técnica o mais breve possível.';
         }
       }
 
       $mailer->clearAddresses(); unset($mailer);
     } 
+
+    if (empty($TASK['task-errors'])) {
+      $data = 'data'.'/'.'tasks'.'/'.$TASK['task-uuid'];
+
+      $tmp = 'data'.'/'.'tmp'.'/'.$TASK['task-uuid'];
+
+      if (is_dir($tmp)) {
+        rename($tmp, $data);
+      }
+
+      if (!is_dir($data)) {
+        mkdir($data, 0777, true);
+      }
+
+      if (($f = @fopen($data.'/'.$TASK['task-uuid'].'.task.json', 'w')) !== false) {
+        fwrite($f, json_encode($TASK)); // fwrite($f, json_encode($TASK, JSON_PRETTY_PRINT));
+      } else {
+        $TASK['task-warnings'][] = 'Parece que tivemos um problema ao salvar um cópia dos dados em nosso servidor. Isso não irá afetar o atendimento, porém é recomendado alertar a equipe técnica o mais breve possível.';
+      }
+      
+      fclose($f);
+    }
 
     if (!empty($TASK['task-errors'])) {
       delete($TASK['task-uuid']);
@@ -573,32 +620,36 @@
         </div>
       <?php endif; ?>
 
-      <?php if (!empty($TASK['task-infos'])): ?>
-        <?php foreach($TASK['task-infos'] as $info): ?>
-          <div>
-            <div class="text-center">
-              <div class="alert alert-info">
-                <h2 class="alert-heading">:)</h2>
-                <h3>Olá!</h3>
-                <p><?= $info ?></p>
-              </div>
-            </div>
-          </div>
-        <?php endforeach; ?>
-      <?php endif; ?>
+      <?php if (empty($TASK['task-errors'])): ?>
 
-      <?php if (!empty($TASK['task-warnings'])): ?>
-        <?php foreach($TASK['task-warnings'] as $warning): ?>
-          <div>
-            <div class="text-center">
-              <div class="alert alert-warning">
-                <h2 class="alert-heading">:|</h2>
-                <h3>Atenção!</h3>
-                <p><?= $warning ?></p>
+        <?php if (!empty($TASK['task-infos'])): ?>
+          <?php foreach($TASK['task-infos'] as $info): ?>
+            <div>
+              <div class="text-center">
+                <div class="alert alert-info">
+                  <h2 class="alert-heading">:)</h2>
+                  <h3>Olá!</h3>
+                  <p><?= $info ?></p>
+                </div>
               </div>
             </div>
-          </div>
-        <?php endforeach; ?>
+          <?php endforeach; ?>
+        <?php endif; ?>
+
+        <?php if (!empty($TASK['task-warnings'])): ?>
+          <?php foreach($TASK['task-warnings'] as $warning): ?>
+            <div>
+              <div class="text-center">
+                <div class="alert alert-warning">
+                  <h2 class="alert-heading">:|</h2>
+                  <h3>Ops!</h3>
+                  <p><?= $warning ?></p>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
+
       <?php endif; ?>
 
       <?php if (!empty($TASK['task-errors'])): ?>
@@ -724,13 +775,7 @@
                         <dd>"<?= $TASK['task-description'] ?>"</dd>
                         <dt><i class="fas fa-upload"></i> Anexo:</dt>
                         <?php if (!empty($TASK['task-attachments'])): ?>
-                          <dd>
-                            <p class="h1">
-                            <?php foreach($TASK['task-attachments'] as $attachment): ?>
-                              <span class="py-5 pr-1"><a href="<?= $CONFIG['jumintus']['url'].'/'.'tasks'.'/'.$TASK['task-uuid'].'/'.'attachments'.'/'.$attachment ?>" target="_blank"><i class="fas fa-file-download"></i></a></span>
-                            <?php endforeach; ?>    
-                            </p>
-                          </dd>
+                          <dd><?= count($TASK['task-attachments']) ?> anexo(s)</dd>
                         <?php else: ?>
                           <dd>Sem anexo.</dd>
                         <?php endif; ?>                     
