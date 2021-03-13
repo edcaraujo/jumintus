@@ -1,5 +1,7 @@
 ports:
   - port: 8000
     onOpen: open-preview
+    
 tasks:
-  - command: php -S 0.0.0.0:8000
+  - init: echo Hi
+    command: php -S 0.0.0.0:8000
